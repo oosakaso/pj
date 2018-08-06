@@ -119,19 +119,20 @@ void get_process_info(char* p, char* result) {
   strcat(result, "\"}");
 }
 
-int connect_socket(char* result){
+int connect_socket(char* addr, char* result){
   int sock = 0;
   struct sockaddr_in server;
 
   sock = socket(AF_INET , SOCK_STREAM , 0);
   if (sock == -1){
     printf("Failed in creating socket\n");
+    close(sock);
     return -1;
   }
   printf("Socket created\n");
 
   server.sin_family = AF_INET;
-  server.sin_addr.s_addr = inet_addr("127.0.1.1");
+  server.sin_addr.s_addr = inet_addr(addr);
   server.sin_port = htons(8888);
 
   if (connect(sock, (struct sockaddr *)& server, sizeof(server)) < 0){
@@ -139,12 +140,14 @@ int connect_socket(char* result){
     close(sock);
     return -1;
   }
+  printf("Socket connected\n");
 
   if(send(sock , result, strlen(result) , 0 ) < 0){
     close(sock);
+    printf("%s\n", "Failed to send result");
     return -1;
   }
-  printf("Result message sent\n");
+  printf("%s\n", "Result sent");
   close(sock);
   return 1;
 }
@@ -158,7 +161,6 @@ int main( int argc, char *argv[] )
   char result[2048] = "";
   char temp[2048] = "";
 
-  //output saved in data
   command("ifconfig", data);
   int i = count_interface(data);
   strcat(result, "{\"interfaces\":[");
@@ -174,7 +176,6 @@ int main( int argc, char *argv[] )
   strcat(result, "]");
 
   command("ps -ef | grep ps | grep ef", data);
-  // add data to result
   if(strcmp(data, "")){
     strcat(result, ",\"process\":");
     get_process_info(data, result);
@@ -200,13 +201,13 @@ int main( int argc, char *argv[] )
   //   printf("fclose Failed.\n");
   //   exit;
   // }
-
+  char addr[32] = "";
   int trial = 0;
-
-  while(trial < 3){
-    if(connect_socket(result) == -1){
+  printf("%s\n", "Please enter server addr: ");
+  scanf("%s", addr);
+  while(trial < 10){
+    if(connect_socket(addr, result) == -1){
       trial++;
-      printf("%s\n", "Failed to send result");
       continue;
     }
     else {
