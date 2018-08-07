@@ -156,7 +156,6 @@ int main( int argc, char *argv[] )
 {
 
   char* p;
-  char* s;
   char data[2048] = "";
   char result[2048] = "";
   char temp[2048] = "";
@@ -175,11 +174,11 @@ int main( int argc, char *argv[] )
   }
   strcat(result, "]");
 
-  command("ps -ef | grep ps | grep ef", data);
-  if(strcmp(data, "")){
-    strcat(result, ",\"process\":");
-    get_process_info(data, result);
-  }
+  // command("ps -ef | grep ps | grep ef", data);
+  // if(strcmp(data, "")){
+  //   strcat(result, ",\"process\":");
+  //   get_process_info(data, result);
+  // }
 
   // command("cat <file name>", data);
   // add data to result

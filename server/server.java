@@ -39,10 +39,12 @@ public class server {
   public static void main(String[] args) throws IOException {
 
     if(start()){
-      InetAddress addr = InetAddress.getLocalHost();
-      System.out.println(addr);
+      System.out.println("192.168.1.10");
       System.out.println("Waiting for client connection request...");
       listen();
+    }
+    else{
+      System.out.println("Failed to start server");
     }
     socketserver.close();
   }
