@@ -83,43 +83,11 @@ void get_interface_info(char* p, char* result){
   strcat(result, "}");
 }
 
-void get_process_info(char* p, char* result) {
-  char* substring = strtok(p, " ");
-  if(substring == NULL) return;
-  strcat(result, "{\"UID\":\"");
-  strcat(result, substring);
-  strcat(result, "\",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"PID\":");
-  strcat(result, substring);
-  strcat(result, ",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"PPID\":");
-  strcat(result, substring);
-  strcat(result, ",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"C\":");
-  strcat(result, substring);
-  strcat(result, ",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"STIME\":\"");
-  strcat(result, substring);
-  strcat(result, "\",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"TTY\":\"");
-  strcat(result, substring);
-  strcat(result, "\",");
-  substring = strtok(NULL, " ");
-  strcat(result, "\"TIME\":\"");
-  strcat(result, substring);
-  strcat(result, "\",");
-  substring = strtok(NULL, "\n");
-  strcat(result, "\"CMD\":\"");
-  strcat(result, substring);
-  strcat(result, "\"}");
-}
-
 int connect_socket(char* result){
+  char addr[32] = "";
+  printf("%s\n", "Please enter server addr: ");
+  scanf("%s", addr);
+
   int sock = 0;
   struct sockaddr_in server;
 
@@ -131,7 +99,7 @@ int connect_socket(char* result){
   printf("Socket created\n");
 
   server.sin_family = AF_INET;
-  server.sin_addr.s_addr = inet_addr("127.0.1.1");
+  server.sin_addr.s_addr = inet_addr(addr);
   server.sin_port = htons(8888);
 
   if (connect(sock, (struct sockaddr *)& server, sizeof(server)) < 0){
@@ -141,6 +109,7 @@ int connect_socket(char* result){
   }
 
   if(send(sock , result, strlen(result) , 0 ) < 0){
+    printf("%s\n", "Failed to send result");
     close(sock);
     return -1;
   }
@@ -153,60 +122,48 @@ int main( int argc, char *argv[] )
 {
 
   char* p;
-  char* s;
   char data[2048] = "";
   char result[2048] = "";
   char temp[2048] = "";
 
-  //output saved in data
+  strcat(result, "{");
   command("ifconfig", data);
-  int i = count_interface(data);
-  strcat(result, "{\"interfaces\":[");
-
-  //for each interface
-  for(int j = 0; j < i; j++ ){
-    p = split_interface(j, data, temp);
-    get_interface_info(p, result);
-    if(j != i-1){
-      strcat(result, ",");
-    }
-  }
-  strcat(result, "]");
-
-  command("ps -ef | grep ps | grep ef", data);
-  // add data to result
   if(strcmp(data, "")){
-    strcat(result, ",\"process\":");
-    get_process_info(data, result);
+    int i = count_interface(data);
+    strcat(result, "\"interfaces\":[");
+
+    //for each interface
+    for(int j = 0; j < i; j++ ){
+      p = split_interface(j, data, temp);
+      get_interface_info(p, result);
+      if(j != i-1){
+        strcat(result, ",");
+      }
+    }
+    strcat(result, "]");
+  }
+  else{
+    printf("%s\n", "Failed to get interface info");
   }
 
-  // command("cat <file name>", data);
-  // add data to result
+  command("curl http://localhost:9090/all", data);
+  if(strcmp(data, "")){
+    strcat(result, data);
+  }
+  else{
+    printf("%s\n", "Failed to get neighbors info");
+  }
 
   //print result
   strcat(result, "}");
+  printf("%s\n", "The output is: ");
   printf("%s\n", result);
-
-  // int fp2 = open("info.json", O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO );
-  // FILE *f = fopen("info.json", "w");
-  // if(f == NULL){
-  //   printf("error cannot create json\n");
-  //   exit;
-  // }
-  // else{
-  //   fprintf(f, "%s", result);
-  // }
-  // if(fclose(f) != 0){
-  //   printf("fclose Failed.\n");
-  //   exit;
-  // }
 
   int trial = 0;
 
-  while(trial < 3){
+  while(trial < 5){
     if(connect_socket(result) == -1){
       trial++;
-      printf("%s\n", "Failed to send result");
       continue;
     }
     else {
